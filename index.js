@@ -44,8 +44,8 @@ function getDefaultPropsFunction(propTypesArray){
 module.exports = {
     name: 'core.type.component',
     dependencies: [
-        'core.plugin.get-definition-object',
-        'core.plugin.build',
+        'core.plugin.type',
+        'core.loader.types',
         'core.import.react',
         'core.import.create-react-class',
         'core.import.prop-types',
