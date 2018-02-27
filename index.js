@@ -53,37 +53,42 @@ module.exports = {
     types: [{
         name: 'component',
         extends: 'module',
-        build(definition, _super, done) {
+        build(definition, done) {
             
             var core = this;
-            var { get, name, value, propTypes } = definition;
+            var { get, name, value, dependencies, propTypes } = definition;
             var propTypesArray = propTypesToArray(propTypes);
-            var def = core.assign({}, definition, {
-                get(modules){
-                    var component, def = value ? value : get.apply(this, arguments);
-                    if(core.isFunction(def)){
-                        component = def;
-                    }
-                    else{
-                        if(propTypesArray){
-                            def.propTypes = def.propTypes || propTypesObject(propTypesArray, core.imports.PropTypes);
-                            def.getDefaultProps = def.getDefaultProps || getDefaultPropsFunction(propTypesArray);
-                        }
-                        component = core.createComponent(name, def);
-                    }
-                    core.components[name] = component;
-                    return component;
+
+            core.Module(name, dependencies, function(modules){
+
+                var component, def = value ? value : get.apply(this, arguments);
+                if(core.isFunction(def)){
+                    component = def;
                 }
+                else{
+                    if(propTypesArray){
+                        def.propTypes = def.propTypes || propTypesObject(propTypesArray, core.imports.PropTypes);
+                        def.getDefaultProps = def.getDefaultProps || getDefaultPropsFunction(propTypesArray);
+                    }
+                    component = core.createComponent(name, def);
+                }
+                return component;
+
+            }, function(component){
+
+                core.components[name] = component;
+                done && done(component);
+
             });
-            
-            delete def.value;
-            _super(def, done);
         }
     }],
     extend: {
         components: {},
         Component(name, dependencies, get, done) {
-            var definition = this.getDefinitionObject(name, dependencies, get, 'component', done);            
+            if(Array.isArray(name)){
+                return name.map(this.Component)
+            }
+            var definition = this.getDefinitionObject(name, dependencies, get, 'component', done);
             return this.build(definition, definition.done);
         },
         createElement(definition) {
