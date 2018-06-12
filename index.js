@@ -51,6 +51,7 @@ function getDefaultPropsFunction(propTypesArray){
 
 module.exports = {
     name: 'core.type.component',
+    channels: ['core.component.definition', 'core.component.loaded'],
     dependencies: [
         'core.plugin.type',
         'core.loader.types',
