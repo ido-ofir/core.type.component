@@ -1,6 +1,6 @@
 {
     "name": "core.type.component",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "a react component",
     "main": "index.js",
     "scripts": {

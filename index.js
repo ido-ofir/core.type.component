@@ -15,13 +15,21 @@ function propTypesToArray(target){
     return result;
 }
 
-function propTypesObject(propTypesArray, ReactPropTypes) {
+function getPropType(type, ReactPropTypes, coreTypes){
+    var propType = ReactPropTypes[type];
+    if(!propType && coreTypes[type] && coreTypes[type].extends){
+        propType = getPropType(coreTypes[type].extends, ReactPropTypes, coreTypes);
+    }
+    return propType;
+}
+
+function propTypesObject(propTypesArray, ReactPropTypes, coreTypes) {
     if (!propTypesArray) return {};
     var PropType;
     var pt = {};
     propTypesArray.map(item => {
         if(!item.type) return;
-        PropType = ReactPropTypes[item.type];
+        PropType = getPropType(item.type, ReactPropTypes, coreTypes);
         if (!PropType) return console.warn(`cannot find PropType ${item.type}`);
         if (item.isRequired) {
             pt[item.key] = PropType.isRequired;
@@ -53,11 +61,21 @@ module.exports = {
     types: [{
         name: 'component',
         extends: 'module',
+        identifier: 'name',
+        schema: [
+            {
+                key: 'schema',
+                type: 'array',
+                params: { ofType: 'schemaItem' },
+                description: 'A schema that describes the props that this component will accept',
+                defaultValue: []
+            }
+        ],
         build(definition, done) {
             
             var core = this;
-            var { get, name, value, dependencies, propTypes } = definition;
-            var propTypesArray = propTypesToArray(propTypes);
+            var { get, name, value, dependencies, schema } = definition;
+            var propTypesArray = propTypesToArray(schema);
 
             core.Module(name, dependencies, function(modules){
 
@@ -67,11 +85,17 @@ module.exports = {
                 }
                 else{
                     if(propTypesArray){
-                        def.propTypes = def.propTypes || propTypesObject(propTypesArray, core.imports.PropTypes);
+                        def.propTypes = def.propTypes || propTypesObject(propTypesArray, core.imports.PropTypes, core.types);
                         def.getDefaultProps = def.getDefaultProps || getDefaultPropsFunction(propTypesArray);
                     }
+                    core.fire('core.component.definition', def, (defin) => {
+                        def = defin;
+                    })
                     component = core.createComponent(name, def);
                 }
+                core.fire('core.component.loaded', component, (comp) => {
+                    component = comp;
+                })
                 return component;
 
             }, function(component){
@@ -89,7 +113,15 @@ module.exports = {
                 return name.map(this.Component)
             }
             var definition = this.getDefinitionObject(name, dependencies, get, 'component', done);
-            return this.build(definition, definition.done);
+            // return this.build(definition, definition.done);
+            var source = this.type.toSource({
+                id: definition.name,
+                key: definition.name,
+                type: 'component',
+                description: definition.description || '',
+              }, definition);
+              
+            return this.build(source, definition.done);
         },
         createElement(definition) {
 
@@ -125,7 +157,7 @@ module.exports = {
             } else {
                 // componentDefinition.propTypes = getReactPropTypes(componentDefinition.propTypes, this.PropTypes);
                 component = createReactClass(componentDefinition);
-                component.displayName = name;
+                component.displayName = componentDefinition.displayName || name;
                 if (componentDefinition.enhancers) { // enhancers is an array of higher order constructors.
                     componentDefinition.enhancers.map((higherOrder) => {
                         component = higherOrder(component);
