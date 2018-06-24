@@ -113,7 +113,7 @@ module.exports = {
             if(Array.isArray(name)){
                 return name.map(this.Component)
             }
-            var definition = this.getDefinitionObject(name, dependencies, get, 'component', done);
+            var definition = this.type.getDefinitionObject(name, dependencies, get, 'component', done);
             // return this.build(definition, definition.done);
             var source = this.type.toSource({
                 id: definition.name,
