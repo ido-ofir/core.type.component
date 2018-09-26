@@ -14,7 +14,10 @@ core.Component({
     name: 'SomeComponent',
     dependencies: ['moduleA', 'moduleB'],
     get(moduleA, moduleB){
+    
+        // return a React component definition
         return {
+            componentDidMount(){ ... },
             render(){
                 return <div>OK</div>
             }
@@ -22,9 +25,9 @@ core.Component({
     }
 });
 
-// available on core.components
-core.components.SomeComponent
-
-// can also be required
+// can be required
 core.require(['SomeComponent'], (SomeComponent) => { ... })
+
+// once loaded, also available on core.components
+core.components.SomeComponent
 ```
